@@ -2,6 +2,7 @@ using Oceananigans
 using Oceananigans.Units
 using SeawaterPolynomials.TEOS10: TEOS10EquationOfState
 using Printf
+using CairoMakie
 
 filename = "baroclinic_wave"
 
@@ -96,9 +97,10 @@ end
 
 fig = Figure(size=(800, 1200))
 
-axs = Axis(fig[2, 1])
-axζ = Axis(fig[3, 1])
-axT = Axis(fig[4, 1])
+kwargs_axis = (xticks = 0:60:360, yticks = -80:40:80)
+axs = Axis(fig[2, 1]; kwargs_axis...)
+axζ = Axis(fig[3, 1]; kwargs_axis...)
+axT = Axis(fig[4, 1]; kwargs_axis...)
 
 hm = heatmap!(axs, sn, colorrange=(0, 2))
 Colorbar(fig[2, 2], hm, label = "Surface speed (m s⁻¹)")
@@ -114,6 +116,7 @@ fig[1, :] = Label(fig, title, tellwidth=false)
 
 n[] = 1
 save("initial_snapshot.png", fig)
+
 n[] = Nt
 save("final_snapshot.png", fig)
 
