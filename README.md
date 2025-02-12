@@ -1,1 +1,1 @@
-# SeanHaneaySymposium2025
+# SeanHaneySymposium2025
