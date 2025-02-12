@@ -21,7 +21,9 @@ momentum_advection = WENOVectorInvariant(order=3)
 tracer_advection   = WENO(order=5)
 
 buoyancy = SeawaterBuoyancy(equation_of_state=TEOS10EquationOfState())
-model = HydrostaticFreeSurfaceModel(; grid, momentum_advection, tracer_advection, buoyancy, tracers=(:T, :S))
+model = HydrostaticFreeSurfaceModel(; grid, momentum_advection, tracer_advection,
+                                      buoyancy,
+                                      tracers=(:T, :S))
 
 Tatm(λ, φ, z=0) = 30 * cosd(φ)
 Tᵢ(λ, φ, z) = 30 * (1 - tanh((abs(φ) - 40) / 5)) / 2 + rand()
@@ -63,6 +65,6 @@ ow = JLD2OutputWriter(model, fields,
                       schedule = TimeInterval(1days),
                       overwrite_existing = true)
 
-model.output_writers[:surface] = ow
+simulation.output_writers[:surface] = ow
 
 run!(simulation)
