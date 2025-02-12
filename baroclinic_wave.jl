@@ -1,7 +1,6 @@
-using ClimaOcean
-using Oceananigans
 using Oceananigans
 using Oceananigans.Units
+using SeawaterPolynomials: TEOS10EquationOfState
 using Printf
 
 arch = GPU()
@@ -12,14 +11,16 @@ Nz = 10
 
 grid = LatitudeLongitudeGrid(arch;
                              size = (Nx, Ny, Nz),
-                             halo = (7, 7, 3),
+                             halo = (7, 7, 7),
                              latitude = (-80, 80),
                              longitude = (0, 360),
                              z = (-1000, 0))
 
-advection = WENOVectorInvariant()
+momentum_advection = WENOVectorInvariant()
+tracer_advection = WENO(order=7)
 buoyancy = SeawaterBuoyancy(equation_of_state=TEOS10EquationOfState())
-model = HydrostaticFreeSurfaceModel(; grid, advection, buoyancy, tracers=(:T, :S))
+model = HydrostaticFreeSurfaceModel(; grid, momentum_advection, tracer_advection,
+                                    buoyancy, tracers=(:T, :S))
 
 Tatm(λ, φ, z=0) = 30 * cosd(φ)
 Tᵢ(λ, φ, z) = 30 * (1 - tanh((abs(φ) - 40) / 5)) / 2 + rand()
