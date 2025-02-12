@@ -1,4 +1,4 @@
-using ClimaOcean
+import ClimaOcean
 using Oceananigans
 using Oceananigans
 using Oceananigans.Units
@@ -17,14 +17,16 @@ grid = LatitudeLongitudeGrid(arch;
                              longitude = (0, 360),
                              z = (-1000, 0))
 
+bathymetry = ClimaOcean.regrid_bathymetry(grid) # builds gridded bathymetry based on ETOPO1
+grid = ImmersedBoundaryGrid(grid, GridFittedBottom(bathymetry))
+
 advection = WENOVectorInvariant()
 buoyancy = SeawaterBuoyancy(equation_of_state=TEOS10EquationOfState())
 model = HydrostaticFreeSurfaceModel(; grid, advection, buoyancy, tracers=(:T, :S))
 
-Tatm(λ, φ, z=0) = 30 * cosd(φ)
-Tᵢ(λ, φ, z) = 30 * (1 - tanh((abs(φ) - 40) / 5)) / 2 + rand()
-Sᵢ(λ, φ, z) = 28 - 5e-3 * z + rand()
-set!(model, T=Tᵢ, S=Sᵢ)
+date = DateTimeProlepticGregorian(1993, 1, 1)
+set!(model, T = ClimaOcean.ECCOMetadata(:temperature; date),
+            S = ClimaOcean.ECCOMetadata(:salinity; date))
 
 simulation = Simulation(model, Δt=5minutes, stop_time=180days)
 
