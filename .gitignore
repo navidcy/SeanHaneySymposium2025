@@ -23,4 +23,9 @@ docs/site/
 # environment.
 Manifest.toml
 
+# output files
+*.jld2
+
 *.swp
+*.jld2
+*.gif
