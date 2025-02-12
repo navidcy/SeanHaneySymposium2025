@@ -1,10 +1,9 @@
-using ClimaOcean
 using Oceananigans
 using Oceananigans.Units
 using SeawaterPolynomials.TEOS10: TEOS10EquationOfState
 using Printf
 
-arch = CPU()
+arch = GPU()
 resolution = 1 #1//4
 Nx = 360 ÷ resolution
 Ny = 160 ÷ resolution
@@ -21,11 +20,13 @@ momentum_advection = WENOVectorInvariant(order=3)
 tracer_advection   = WENO(order=5)
 
 buoyancy = SeawaterBuoyancy(equation_of_state=TEOS10EquationOfState())
-model = HydrostaticFreeSurfaceModel(; grid, momentum_advection, tracer_advection,
+model = HydrostaticFreeSurfaceModel(; grid,
+                                      momentum_advection,
+                                      tracer_advection,
+                                      coriolis = HydrostaticSphericalCoriolis(),
                                       buoyancy,
                                       tracers=(:T, :S))
 
-Tatm(λ, φ, z=0) = 30 * cosd(φ)
 Tᵢ(λ, φ, z) = 30 * (1 - tanh((abs(φ) - 40) / 5)) / 2 + rand()
 Sᵢ(λ, φ, z) = 28 - 5e-3 * z + rand()
 set!(model, T=Tᵢ, S=Sᵢ)
@@ -68,3 +69,50 @@ ow = JLD2OutputWriter(model, fields,
 simulation.output_writers[:surface] = ow
 
 run!(simulation)
+
+u = FieldTimeSeries("baroclinic_wave.jld2", "u"; backend = OnDisk())
+v = FieldTimeSeries("baroclinic_wave.jld2", "v"; backend = OnDisk())
+T = FieldTimeSeries("baroclinic_wave.jld2", "T"; backend = OnDisk())
+ζ = FieldTimeSeries("baroclinic_wave.jld2", "ζ"; backend = OnDisk())
+
+times = u.times
+Nt = length(times)
+
+n = Observable(1)
+
+Tn = @lift begin
+    Tn = interior(T[$n])
+    view(Tn, :, :, 1)
+end
+
+ζn = @lift interior(ζ[$n], :, :, 1)
+Tn = @lift (T[$n], :, :, 1)
+
+un = Field{Face, Center, Nothing}(u.grid)
+vn = Field{Center, Face, Nothing}(v.grid)
+s = Field(sqrt(un^2 + vn^2))
+
+sn = @lift begin
+    parent(un) .= parent(u[$n])
+    parent(vn) .= parent(v[$n])
+    compute!(s)
+    sn = interior(s)
+    view(sn, :, :, 1)
+end
+
+fig = Figure()
+axs = Axis(fig[1, 1])
+axζ = Axis(fig[2, 1])
+axT = Axis(fig[3, 1])
+
+heatmap!(axs, sn)
+heatmap!(axζ, ζn)
+heatmap!(axT, Tn)
+
+save("snapshot.png", fig)
+
+
+record(fig, "baroclinic_wave.mp4", 1:Nt, framerate = 8) do nn
+    @info nn
+    n[] = nn
+end
