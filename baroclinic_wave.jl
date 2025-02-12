@@ -11,14 +11,13 @@ Nz = 10
 
 grid = LatitudeLongitudeGrid(arch;
                              size = (Nx, Ny, Nz),
-                             halo = (7, 7, 3),
+                             halo = (7, 7, 7),
                              latitude = (-80, 80),
                              longitude = (0, 360),
                              z = (-1000, 0))
 
 momentum_advection = WENOVectorInvariant(order=3)
 tracer_advection   = WENO(order=5)
-
 buoyancy = SeawaterBuoyancy(equation_of_state=TEOS10EquationOfState())
 model = HydrostaticFreeSurfaceModel(; grid,
                                       momentum_advection,

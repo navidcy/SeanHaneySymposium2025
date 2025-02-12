@@ -12,7 +12,7 @@ Nz = 10
 
 grid = LatitudeLongitudeGrid(arch;
                              size = (Nx, Ny, Nz),
-                             halo = (7, 7, 3),
+                             halo = (7, 7, 7),
                              latitude = (-80, 80),
                              longitude = (0, 360),
                              z = (-1000, 0))
@@ -22,7 +22,8 @@ grid = ImmersedBoundaryGrid(grid, GridFittedBottom(bathymetry))
 
 advection = WENOVectorInvariant()
 buoyancy = SeawaterBuoyancy(equation_of_state=TEOS10EquationOfState())
-model = HydrostaticFreeSurfaceModel(; grid, advection, buoyancy, tracers=(:T, :S))
+model = HydrostaticFreeSurfaceModel(; grid, momentum_advection, tracer_advection,
+                                    buoyancy, tracers=(:T, :S))
 
 date = DateTimeProlepticGregorian(1993, 1, 1)
 set!(model, T = ClimaOcean.ECCOMetadata(:temperature; date),
