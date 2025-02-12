@@ -18,9 +18,9 @@ grid = LatitudeLongitudeGrid(arch;
                              halo = (7, 7, 7),
                              latitude = (-80, 80),
                              longitude = (0, 360),
-                             z = (-1000, 0))
+                             z = (-3000, 0))
 
-momentum_advection = WENOVectorInvariant(order=7)
+momentum_advection = WENOVectorInvariant(order=9)
 tracer_advection   = WENO(order=7)
 coriolis = HydrostaticSphericalCoriolis()
 buoyancy = SeawaterBuoyancy(equation_of_state=TEOS10EquationOfState())
@@ -115,10 +115,10 @@ title = @lift @sprintf("%s", prettytime(times[$n]))
 fig[1, :] = Label(fig, title, tellwidth=false)
 
 n[] = 1
-save("initial_snapshot.png", fig)
+save(filename * "_initial_snapshot.png", fig)
 
 n[] = Nt
-save("final_snapshot.png", fig)
+save(filename * "_final_snapshot.png", fig)
 
 record(fig, filename * ".mp4", 1:Nt, framerate = 16) do nn
     @info nn
