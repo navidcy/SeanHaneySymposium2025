@@ -1,10 +1,10 @@
 using ClimaOcean
 using Oceananigans
-using Oceananigans
 using Oceananigans.Units
+using SeawaterPolynomials.TEOS10: TEOS10EquationOfState
 using Printf
 
-arch = GPU()
+arch = CPU()
 resolution = 1 #1//4
 Nx = 360 ÷ resolution
 Ny = 160 ÷ resolution
@@ -17,9 +17,11 @@ grid = LatitudeLongitudeGrid(arch;
                              longitude = (0, 360),
                              z = (-1000, 0))
 
-advection = WENOVectorInvariant()
+momentum_advection = WENOVectorInvariant(order=3)
+tracer_advection   = WENO(order=5)
+
 buoyancy = SeawaterBuoyancy(equation_of_state=TEOS10EquationOfState())
-model = HydrostaticFreeSurfaceModel(; grid, advection, buoyancy, tracers=(:T, :S))
+model = HydrostaticFreeSurfaceModel(; grid, momentum_advection, tracer_advection, buoyancy, tracers=(:T, :S))
 
 Tatm(λ, φ, z=0) = 30 * cosd(φ)
 Tᵢ(λ, φ, z) = 30 * (1 - tanh((abs(φ) - 40) / 5)) / 2 + rand()
@@ -39,11 +41,11 @@ function progress(sim)
                    maximum(abs, v),
                    maximum(abs, w))
 
-    msg *= @sprintf(", extrema(T): (%.2f, %.2f), extrema(S): (%.2f, %.2f)", 
+    msg *= @sprintf(", extrema(T): (%.2f, %.2f), extrema(S): (%.2f, %.2f)",
                     minimum(T), maximum(T), minimum(S), maximum(S))
 
     @info msg
-                        
+
     return nothing
 end
 
@@ -61,7 +63,6 @@ ow = JLD2OutputWriter(model, fields,
                       schedule = TimeInterval(1days),
                       overwrite_existing = true)
 
-ocean.output_writers[:surface] = ow
+model.output_writers[:surface] = ow
 
 run!(simulation)
-
