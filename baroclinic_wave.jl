@@ -8,7 +8,7 @@ filename = "baroclinic_wave"
 
 arch = GPU()
 
-resolution = 1
+resolution = 1//2
 Nx = 360 ÷ resolution
 Ny = 160 ÷ resolution
 Nz = 10
