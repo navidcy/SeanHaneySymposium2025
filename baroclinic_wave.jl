@@ -1,4 +1,3 @@
-#=
 using Oceananigans
 using Oceananigans.Units
 using SeawaterPolynomials.TEOS10: TEOS10EquationOfState
@@ -73,7 +72,7 @@ simulation.output_writers[:surface] = ow
 
 run!(simulation)
 
-=#
+
 using Oceananigans
 using Oceananigans.Units
 using GLMakie
@@ -87,7 +86,7 @@ T = FieldTimeSeries(filename * ".jld2", "T"; backend = OnDisk())
 times = u.times
 Nt = length(times)
 
-n = Observable(1)
+n = Observable(Nt)
 
 ζn = @lift ζ[$n]
 
@@ -114,8 +113,9 @@ axT = Axis(fig[4, 1]; kwargs_axis...)
 hm = heatmap!(axs, sn, colorrange=(0, 6))
 Colorbar(fig[2, 2], hm, label = "Surface speed (m s⁻¹)", labelsize=20)
 
-hm = heatmap!(axζ, ζn, colormap=:balance, colorrange=(-3, 3))
-Colorbar(fig[3, 2], hm, label = "relative vorticity (10⁻⁵ s⁻¹)", labelsize=20)
+hm = heatmap!(axζ, ζn, colormap=:balance, colorrange=(-3e-5, 3e-5))
+ticks = (-2e-5:1e-5:2e-5, ["-2", "-1", "0", "1", "2"])
+Colorbar(fig[3, 2], hm; ticks, label = "relative vorticity (10⁻⁵ s⁻¹)", labelsize=20)
 
 hm = heatmap!(axT, Tn, colormap=:thermal, colorrange=(0, 31))
 Colorbar(fig[4, 2], hm, label = "surface temperature (ᵒC)", labelsize=20)
@@ -219,7 +219,6 @@ colgap!(fig.layout, 1, Relative(-0.07))
 colgap!(fig.layout, 2, Relative(-0.07))
 
 fig
-
 
 n[] = Nt
 save(filename * "_final_snapshot_sphere.png", fig)
