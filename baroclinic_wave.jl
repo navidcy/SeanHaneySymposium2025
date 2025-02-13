@@ -220,89 +220,13 @@ colgap!(fig.layout, 2, Relative(-0.07))
 
 fig
 
+n[] = 1
+save(filename * "_initial_snapshot_sphere.png", fig)
+
 n[] = Nt
 save(filename * "_final_snapshot_sphere.png", fig)
 
 n[] = 1
-save(filename * "_final_snapshot_sphere.png", fig)
-
-record(fig, filename * "_sphere..mp4", 1:Nt, framerate = 16) do nn
-    @info "Drawing frame $nn of $Nt..."
-    n[] = nn
-end
-
-
-using Oceananigans
-using GLMakie
-
-function geographic2cartesian(λ, φ, r=1)
-    Nλ = length(λ)
-    Nφ = length(φ)
-    λ = repeat(reshape(λ, Nλ, 1), 1, Nφ)
-    φ = repeat(reshape(φ, 1, Nφ), Nλ, 1)
-
-    λ_azimuthal = λ .+ 180  # Convert to λ ∈ [0°, 360°]
-    φ_azimuthal = 90 .- φ   # Convert to φ ∈ [0°, 180°] (0° at north pole)
-
-    x = @. r * cosd(λ_azimuthal) * sind(φ_azimuthal)
-    y = @. r * sind(λ_azimuthal) * sind(φ_azimuthal)
-    z = @. r * cosd(φ_azimuthal)
-
-    return x, y, z
-end
-
-u = FieldTimeSeries(filename * ".jld2", "u"; backend = OnDisk())
-v = FieldTimeSeries(filename * ".jld2", "v"; backend = OnDisk())
-T = FieldTimeSeries(filename * ".jld2", "T"; backend = OnDisk())
-ζ = FieldTimeSeries(filename * ".jld2", "ζ"; backend = OnDisk())
-
-times = u.times
-Nt = length(times)
-
-grid = u.grid
-λ = λnodes(grid, Center(), Center(), Center())
-φ = φnodes(grid, Center(), Center(), Center())
-x, y, z = geographic2cartesian(λ, φ)
-
-Nx, Ny, Nz = size(grid)
-
-n = Observable(1)
-
-ζn = @lift interior(ζ[$n], :, :, 1)
-
-un = Field{Face, Center, Nothing}(u.grid)
-vn = Field{Center, Face, Nothing}(v.grid)
-s = Field(sqrt(un^2 + vn^2))
-
-sn = @lift begin
-    parent(un) .= parent(u[$n])
-    parent(vn) .= parent(v[$n])
-    compute!(s)
-end
-
-
-fig = Figure(size=(1400, 800))
-
-kw = (elevation= deg2rad(-10), azimuth=deg2rad(90), aspect=:equal)
-
-axζ = Axis3(fig[1, 1]; kw...)
-axs = Axis3(fig[1, 2]; kw...)
-surface!(axζ, x, y, z, color=ζn, colorrange=(-2e-5, 2e-5), colormap=:balance, nan_color=:lightgray)
-surface!(axs, x, y, z, color=sn, colorrange=(0, 6), colormap=:magma, nan_color=:lightgray)
-
-t = u.times
-title = @lift @sprintf("%s days", round((times[$n]+ 1e-6) / day, digits=2))
-Label(fig[0, :], title, fontsize=24)
-
-hidedecorations!(axζ)
-hidedecorations!(axs)
-hidespines!(axζ)
-hidespines!(axs)
-
-# rowgap!(fig.layout, 1, Relative(-0.4))
-colgap!(fig.layout, 1, Relative(-0.1))
-
-n[] = Nt
 save(filename * "_final_snapshot_sphere.png", fig)
 
 record(fig, filename * "_sphere.mp4", 1:Nt, framerate = 16) do nn
