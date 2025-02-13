@@ -1,7 +1,8 @@
 using GLMakie, FileIO
 using Downloads: download
 
-earth_img = load(download("https://upload.wikimedia.org/wikipedia/commons/5/56/Blue_Marble_Next_Generation_%2B_topography_%2B_bathymetry.jpg"))
+# earth_img = load(download("https://upload.wikimedia.org/wikipedia/commons/5/56/Blue_Marble_Next_Generation_%2B_topography_%2B_bathymetry.jpg"))
+earth_img = load("blue-marble-only-land.png")
 
 n = 1024 ÷ 4 # 2048
 θ = LinRange(0, π, n)
@@ -17,7 +18,7 @@ ax = Axis3(fig[1, 1]; kw...)
 
 # Plot textured mesh
 surface!(ax, x, y, z;
-    color = earth_texture,
+    color = earth_img,
     shading = NoShading,
     backlight = 1.5f0
     )
